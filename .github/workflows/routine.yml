@@ -1,0 +1,47 @@
+name: Invoke API
+
+permissions:
+  contents: write
+  
+on:
+  schedule:
+    - cron: "17 */2 * * *"
+  workflow_dispatch:
+
+jobs:
+  invoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Random Time Interval
+        run: |
+          sleep_time=$(( ( RANDOM % 60 )  + 1 ))
+          echo "Sleeping for $sleep_time seconds"
+          sleep $sleep_time
+        id: wait
+
+      - name: Checkout Code
+        if: success()  # 只有在上一步成功时才执行
+        uses: actions/checkout@v2
+        with:
+          ref: master
+
+      - name: Setup Python And Poetry
+        if: success()  # 只有在上一步成功时才执行
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - uses: Gr1N/setup-poetry@v8
+
+      - name: Install Requirement
+        if: success()  # 只有在上一步成功时才执行
+        run: poetry install
+
+      - name: Test API
+        if: success()  # 只有在上一步成功时才执行
+        env:
+          PASSWD: ${{ secrets.PASSWD }}
+        run: bash routine.sh
+
+      - name: Commit And Push
+        if: success()  # 只有在上一步成功时才执行
+        run: bash reset.sh "Update App Config"
